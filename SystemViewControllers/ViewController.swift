@@ -8,8 +8,9 @@
 
 import UIKit
 import SafariServices
+import MessageUI
 
-class ViewController: UIViewController {
+class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate, MFMailComposeViewControllerDelegate {
    
     @IBOutlet weak var imageView: UIImageView!
     
@@ -36,21 +37,52 @@ class ViewController: UIViewController {
     }
     
     @IBAction func photosButtonTapped(_ sender: UIButton) {
+        let imagePicker = UIImagePickerController()
+        imagePicker.delegate = self
+        
         let alertController = UIAlertController(title: "Choose Image Source", message: nil, preferredStyle: .actionSheet)
         let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
-        let cameraAction = UIAlertAction(title: "Camera", style: .default, handler: { action in print("user selected camera action")})
-        let photoLibraryAction = UIAlertAction(title: "Photo Library", style: .default, handler: { action in print("user selected photo library action")})
         
-        alertController.addAction(cancelAction)
-        alertController.addAction(cameraAction)
-        alertController.addAction(photoLibraryAction)
-        alertController.popoverPresentationController?.sourceView = sender
+        if UIImagePickerController.isSourceTypeAvailable(.camera){
+        let cameraAction = UIAlertAction(title: "Camera", style: .default, handler: { action in imagePicker.sourceType = .camera
+            self.present(imagePicker, animated: true, completion: nil)
+        })
+            alertController.addAction(cameraAction)
+        }
+        if UIImagePickerController.isSourceTypeAvailable(.photoLibrary) {
+            let photoLibraryAction = UIAlertAction(title: "photo library", style: .default, handler: {action in imagePicker.sourceType = .photoLibrary
+                self.present(imagePicker, animated: true, completion: nil)
+            })
+            alertController.addAction(photoLibraryAction)
+        }
         
         present(alertController, animated: true, completion: nil)
     }
     
-    @IBAction func emailButtonTapped(_ sender: UIButton) {
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+        if let selectedImage = info[.originalImage] as? UIImage {
+            imageView.image = selectedImage
+            dismiss(animated: true, completion: nil)
+        }
     }
+    
+    @IBAction func emailButtonTapped(_ sender: UIButton) {
+        guard MFMailComposeViewController.canSendMail() else {
+        return
+        }
+        let mailComposer = MFMailComposeViewController()
+        mailComposer.mailComposeDelegate = self
+        mailComposer.setToRecipients(["example@example.com"])
+        mailComposer.setSubject("look at this")
+        mailComposer.setMessageBody("Hello, this is an email from the app I made", isHTML: false)
+        
+        present(mailComposer, animated: true, completion: nil)
+    }
+    
+    func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith result: MFMailComposeResult, error: Error?) {
+        dismiss(animated: true, completion: nil)
+    }
+    
     
     
 }
